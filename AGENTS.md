@@ -6,7 +6,7 @@ This file provides guidance to coding agents when working with code in this repo
 
 ```sh
 pnpm run check          # Run build, size budgets, lint, format check, typecheck, tests, and generated-file checks
-pnpm run build          # Bundle dist/cli.mjs and copy chrome/design assets into dist
+pnpm run build          # Build the publishable CLI and runtime assets
 pnpm run build:skill    # Regenerate skills/lavish/SKILL.md from shared CLI guidance
 pnpm test               # node:test runner (test/*.test.js)
 pnpm run lint           # ESLint over bin src test scripts
@@ -144,6 +144,8 @@ The browser's **Publish link** flow `POST`s `/api/:key/share`; the route is **sa
 ht-ml.app serves hosted pages with no CSP and no sandbox header, so remote CDN/font references load over the viewer's network; hosted shares never include the annotation SDK.
 
 ### AXI integration
+
+Artifact composition is a separate, lazy-loaded AXI control plane. `src/artifact-registry.js` owns project and built-in component and recipe sources; `src/artifact-composer.js` renders exact Mustache inputs from TOON or JSON calls. `src/artifact-commands.js` must stay outside the main CLI bundle so ordinary startup does not load Mustache, TOON, or shadcn. Project source lives under `lavish/`; `lavish/registry.json` and `lavish/shadcn/registry.json` are generated indexes, not authoring surfaces. Component inputs use escaped Mustache tags only. The composer confines input, project source, and output paths by real path. It never runs imported component JavaScript during installation or composition. The official shadcn client is loaded only for an explicit `registry add`.
 
 The CLI is built on `axi-sdk-js` (`runAxiCli`).
 The `home()` callback returns the rich object shown when the user runs `lavish-axi` with no arguments - the same TOON-serialized output that lands in the agent's optional `SessionStart` hook after `lavish-axi setup hooks`; top-level `--help` returns the same static guidance without dynamic sessions.
