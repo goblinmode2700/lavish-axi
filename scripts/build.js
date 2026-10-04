@@ -26,6 +26,29 @@ const cliBuild = await esbuild.build({
 await writeFile(".lavish-performance/build/cli-metafile.json", `${JSON.stringify(cliBuild.metafile, null, 2)}\n`);
 
 await chmod("dist/cli.mjs", 0o755);
+
+await esbuild.build({
+  entryPoints: ["bin/lavish-axi-server.js"],
+  outfile: "dist/server.mjs",
+  bundle: true,
+  packages: "external",
+  platform: "node",
+  format: "esm",
+  target: "node22",
+  plugins: [
+    {
+      name: "external-cli",
+      setup(build) {
+        build.onResolve({ filter: /^\.\/lavish-axi\.js$/ }, () => ({
+          path: "./cli.mjs",
+          external: true,
+        }));
+      },
+    },
+  ],
+});
+await chmod("dist/server.mjs", 0o755);
+
 await copyFile("src/chrome-client.js", "dist/chrome-client.js");
 await copyFile("src/chrome.css", "dist/chrome.css");
 for (const filename of ["artifact-commands.js", "artifact-composer.js", "artifact-registry.js"]) {

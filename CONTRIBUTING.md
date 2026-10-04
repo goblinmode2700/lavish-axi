@@ -10,11 +10,18 @@ We require this to reduce the maintainer's burden of reviewing and merging contr
 Pushing through it runs an AI-driven review/test/lint pipeline in an isolated worktree, forwards the push upstream only after every check passes, and opens a clean PR automatically.
 
 A GitHub Actions check (`Require no-mistakes`) runs on PRs targeting `main` and fails if the body is missing the deterministic signature that no-mistakes writes.
-The release and dependency bots are exempt so their automation keeps working, but regular contributor PRs without the signature will not be reviewed or merged.
+It also requires the machine-readable pipeline attestation that no-mistakes >= 1.46.0 writes next to that signature: the `review`, `test`, and `document` steps must all be recorded as `completed`, and the attested `head_sha` must be the PR's current head.
+The check runs on opened, edited, synchronize, and reopened, including pushed commits. That is safe because no-mistakes #994 writes the attestation before it pushes, so a pipeline-pushed head already has a matching body; a commit pushed outside the pipeline still fails until you `git push no-mistakes` again so the body carries an attestation for the new head.
+The release and dependency bots are exempt so their automation keeps working, but regular contributor PRs without the signature and a current attestation will not be reviewed or merged.
+
+`.github/workflows/no-mistakes-required.yml` is a thin caller of the shared `kunchenguid/no-mistakes` composite action, pinned to an immutable commit SHA and never `@main`.
+Enforcement logic and its tests live upstream. Change them there, and bump this repo's pin in a deliberate separate PR.
+This repo still owns its `on:`, `paths-ignore`, `concurrency`, `permissions`, job name, and author-exemption `if:`.
 
 ## Workflow
 
-Fork routing requires `no-mistakes` v1.30.1 or newer.
+Workflow requires `no-mistakes` v1.46.0 or newer.
+Earlier versions can route pushes to a fork, but they do not write the pipeline attestation required by this repository's PR gate.
 
 1. Fork the repo, then clone the parent repo or set your local `origin` back to the parent repo (`git@github.com:kunchenguid/lavish-axi.git`).
 2. Create a branch and make your changes.
@@ -44,6 +51,12 @@ See the [no-mistakes quick start](https://kunchenguid.github.io/no-mistakes/star
 `pnpm run check` builds the package and applies deterministic raw-byte budgets with
 [Size Limit](https://github.com/ai/size-limit). Run `pnpm run size:why` to inspect
 esbuild's input contribution report after a budget failure.
+
+The upstream 0.1.81 merge resets only the CLI and chrome budgets to 650 kB and
+250 kB. At upstream commit `7369205`, the raw CLI is 624,988 bytes and the chrome
+JavaScript plus CSS is 236,268 bytes. The merged fork adds 3,612 CLI bytes and
+no chrome bytes. These limits allow a small margin over that imported baseline;
+the composition, design, whiteboard, and total-package limits remain unchanged.
 
 Process benchmarks use [Hyperfine 1.20.0](https://github.com/sharkdp/hyperfine/releases/tag/v1.20.0).
 Install that exact version and make sure that `hyperfine --version` reports `1.20.0`.

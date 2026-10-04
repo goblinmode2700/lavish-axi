@@ -2,13 +2,13 @@
   {
     "name": "CLI bundle",
     "path": "dist/cli.mjs",
-    "limit": "450 kB",
+    "limit": "650 kB",
     "brotli": false
   },
   {
     "name": "Chrome runtime",
     "path": ["dist/chrome-client.js", "dist/chrome.css"],
-    "limit": "105 kB",
+    "limit": "250 kB",
     "brotli": false
   },
   {
